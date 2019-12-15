@@ -11,12 +11,12 @@ categories: cp math algorithms
 ## Motivation
 Many computer science problems can be reduced to a polynomial multiplication.
 The most familiar example is the integer multiplication.
-Have you ever wondered why multiplying 100000-digit numbers in Python takes seconds and not minutes?
+Have you ever wondered why multiplying 100000-digit numbers in Python takes seconds and not minutes or hours?
 
 The school algorithm is very simple, but also very slow. Its time complexity is $O(n^2)$.
 There are much more efficient algorithms and the goal of this article is to explore some of them.
 
-After formalizing the problem, we'll have a look the Karatsuba algorithm for multiplying polynomials in $O(n^{1.58})$ time.
+After formalizing the problem, we'll have a look at the Karatsuba algorithm for multiplying polynomials in $O(n^{1.58})$ time.
 Next, we'll try to multiply polynomials using polynomial interpolation which will be the basis of $O(n \log n)$ algorithms that utilize Fast Fourier Transform (FFT) and Number Theoretic Transform (NTT).
 
 All these algorithms use the [Divide and Conquer](https://en.wikipedia.org/wiki/Divide_and_conquer_algorithms) paradigm, so this article can also serve as an advanced introduction (through examples) to that problem-solving approach.
@@ -33,7 +33,7 @@ $$c(x) = a(x)b(x) = \sum\limits_{i=0}^n \sum\limits_{j=0}^n a_ib_j x^{i+j}$$
 The school algorithm written in C is simple and unambiguously illustrates the problem:
 {% highlight c %}
 
-  void mul(int* a, int* b, int* c, int n) {
+  void mul(const int* a, const int* b, int* c, int n) {
     for (int i = 0; i <= 2*n; ++i) {
       c[i] = 0;
     }
@@ -65,22 +65,22 @@ We will solve the problem recursively:
 		* $z_0 = qs$
 	* now we have:
 		* $c = z_2x^{2m} + z_1x^m + z_0$
-	* we see that we can compute $z_0, z_1$ and $z_2$ with **four multiplications** of half-sized polynomials, but we can do better
+	* it's clear we can compute $z_0, z_1$ and $z_2$ using **four multiplications** of half-sized polynomials, but can we do better?
 	* if we compute $z_0$ and $z_2$ first, it turns out we can compute $z_1$ as follows:
 		* $z_1 = (p + q)(r + s) - pr - qs = (p + q)(r + s) - z_0 - z_2$
 
-One multiplication is substituted by several additions (which are cheap) so now we need only **three multiplications** of half-degreed polynomials.
+One multiplication is traded for several additions (which are cheap) so now we need only **three multiplications** of half-degreed polynomials.
 We can multiply those by invoking the algorithm recursively.
 
-Time complexity of this algorithm is $O(n^{\log_2 3})$ which is close to, and is usually written as, $O(n^{1.58})$.
+The time complexity of this algorithm is $O(n^{\log_2 3})$ which is close to, and is usually written as, $O(n^{1.58})$.
 
-If you are curious about how to compute the complexity of this and similar algorithms in an elegant way, see the [Master theorem (Wikipedia)](https://en.wikipedia.org/wiki/Master_theorem_(analysis_of_algorithms)).
+If you'd like to know how to compute the complexity of this and similar algorithms in an elegant way, see the [Master theorem (Wikipedia)](https://en.wikipedia.org/wiki/Master_theorem_(analysis_of_algorithms)).
 
 
-## Multiplications using polynomial interpolation
+## Multiplication using polynomial interpolation
 
-It is known that $n+1$ pairs $(x_0, y_0), .. , (x_n, y_n)$ where $x_i \neq x_j$ for $i \neq j$ uniquely determine a polynomial $p$ of degree $n$ where $p(x_i) = y_i$. We say that from evaluations of a polynomial in $n+1$ points we can reconstruct (interpolate) the polynomial. 
-Simplest intuition for this is that the polynomial has $n + 1$ unknown coefficients, and each evaluation is an equation.
+It is well known that $n+1$ pairs $(x_0, y_0), .. , (x_n, y_n)$ where $x_i \neq x_j$ for $i \neq j$ uniquely determine a polynomial $p$ of degree $n$ such that $p(x_i) = y_i$. We say that from evaluations of a polynomial in $n+1$ points we can reconstruct (interpolate) the polynomial. 
+A simple intuition for this is that the polynomial has $n + 1$ unknown coefficients, and each evaluation is an equation.
 
 In the polynomial multiplication problem, we are looking for the polynomial $c$ of degree $2n$. What if we find values of $c$ in $2n + 1$ points? Then we should be able to reconstruct the solution!
 
@@ -93,7 +93,7 @@ Now we are ready to sketch out the high-level, three-step algorithm:
 3. Interpolate $c$ from pairs $(x_0, y_0), .. , (x_{2n}, y_{2n})$.
 
 This is great, but already the first step is difficult to perform in better than $O(n^2)$ time.
-Lucky for us, someone noticed that evaluation of a polynomial in many points (multipoint evaluation) can be done more efficiently if the chosen set of points satisfies several rules.
+Lucky for us, someone has noticed that evaluation of a polynomial in many points (multipoint evaluation) can be done more efficiently if the set of points is carefully chosen.
 Furthermore, the third step can then also be reduced to the multipoint evaluation of a similar set of points.
 The second step is clearly linear, so this sounds promising.
 
@@ -194,9 +194,8 @@ The complexity of this polynomial multiplication algorithm is  $O(n \log n)$.
 
 ### Multiplication using Number Theoretic Transform (NTT)
 
-A disadvantage of DFT in the context of implementation can be the fact that it uses complex numbers.
-If we work with polynomials over finite fields we may go around it using Number Theoretic Transform (NTT).
-Let's say we are working with a finite field $GP(p)$, that is, all the operations on numbers are done modulo $p$, where $p$ is prime.
+A practical disadvantage of DFT can be the fact it uses complex numbers.
+An alternative is to use polynomials defined over finite fields $GF(p)$, that is, all the operations on numbers are done modulo $p$, where $p$ is prime. This variant of Fourier transform is also known as Number-theoretic transform (NTT).
 
 Similarly to DFT, the product of polynomials $a$ and $b$ of degree $n$ can we written as:
 
@@ -221,15 +220,14 @@ Details are out of the scope of this article, but feel free to experiment.
 
 
 ## Conclusion
-We started with the polynomial multiplication problem but we also learned how to do FFT efficiently. FFT, on the other hand, is used everywhere (for example, processing of various kinds of signals). Some big-integer libraries still use the Karatsuba algorithm, while others have opted for FFT or even fancier algorithms.
+We started with the polynomial multiplication problem but we also learned how to do FFT efficiently. FFT, on the other hand, is widely used for signal processing. Some big-integer libraries still use the Karatsuba algorithm, while others have opted for FFT or even fancier algorithms.
 
 FFT/NTT-based multiplications are definitely a better choice than Karatsuba when talking about speed, but FFT can have precision problems while NTT might not be applicable.
 Another random benefit of the Karatsuba algorithm is that it can be used even when the division is not defined (modulo 24, for example).
 
 ## Few practical tips
-1. NTT-based multiplication can be used even if we don't want the result modulo prime $p$. It is sufficient to use any $p$ larger than any value in our result.
-If we are constrained by sizes of integer data types, we can do the multiplication modulo few different primes. They can be small, but their product must be larger
-than any value in our result. The results can then be combined into non-modulo result using the [Chinese Remained Theorem](https://en.wikipedia.org/wiki/Chinese_remainder_theorem).
+1. NTT-based multiplication can be used even if we need the full, "non-modulo", result. It suffices to use a $p$ larger than any value in the result.
+However, in practice we may be limited by integer data type sizes. In that case, we can repeat the multiplication using different primes. They can be small, but as long as their product is greater than any value in the result, the full result can be reconstructed using the [Chinese Remainder Theorem](https://en.wikipedia.org/wiki/Chinese_remainder_theorem).
 
 2. When implementing Cooley-Tukey to do FFT be aware of the form of $w$ and compute its powers using [De Moivre's formula](https://en.wikipedia.org/wiki/De_Moivre%27s_formula).
 
